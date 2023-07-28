@@ -1,25 +1,16 @@
 import argparse
-import logging 
-import transformers
 import sys, os 
 import numpy as np 
-import timm 
 from utils.check_utils import device_check
 from models.call_model import load_model
+from datas.data_loader import CustomLoader 
 import evaluate
 import torch 
-from tqdm import tqdm 
-from torch.utils.data import DataLoader, random_split
-from torchvision.datasets import ImageFolder
-from torchvision.transforms import (
-    CenterCrop,
-    Compose,
-    Normalize,
-    RandomHorizontalFlip,
-    RandomResizedCrop,
-    Resize,
-    ToTensor,
-)
+from torch.utils.data import DataLoader
+from models.steps import train, val
+from datas.augmentations import transfroms
+from pathlib import Path 
+from datetime import datetime as dt 
 def parse_opt():
     parser = argparse.ArgumentParser()
     # parser.add_argument('--freeze', nargs='+', type=int, default=[0], help='Freeze layers: backbone=10, first3=0 1 2')
@@ -30,6 +21,9 @@ def parse_opt():
     
     # basics
     parser.add_argument('--device', type=str, default='0', help='cpu or 0,1,2...')
+
+    # about datas 
+
 
     # about Model
     parser.add_argument('--model_type', type=str, default='timm', help='model hub - timm, hug, local, torch_hub')
@@ -49,97 +43,40 @@ def parse_opt():
     return opt
 
 def main(opt):
-    # Load the accuracy metric from the datasets package
+    p = Path(opt.save_dir)
+    save_path = (p / dt.now().strftime("%y%m%d"))
+    save_path.mkdir(parents=True, exist_ok=False)
+
     device = device_check(opt.device)
     model = load_model(opt.model_type, opt.model_path, device, opt.num_cls, opt.pretrained)
-    
 
+    # train_dataset = CustomLoader(root=opt.train_dir, img_size=(opt.img_size,opt.img_size), data_type="train")
+    # val_dataset = CustomLoader(root=opt.val_dir, img_size=(opt.img_size,opt.img_size), data_type="val")
+    from torchvision.datasets import ImageFolder
+    # 왜 customloader로 바꾸면 데이터 전송이 안되나? 
+    train_dataset = ImageFolder(root=opt.train_dir, transform=transfroms("train", opt.img_size))
+    val_dataset = ImageFolder(root=opt.val_dir, transform=transfroms("val", opt.img_size))
 
-
-    _train_transforms = Compose(
-        [
-            RandomResizedCrop((opt.img_size,opt.img_size)),
-            RandomHorizontalFlip(),
-            ToTensor(),
-            Normalize(mean=[0.5,0.5,0.5], std=[0.5,0.5,0.5]),
-        ]
-    )
-    _val_transforms = Compose(
-        [
-            Resize((opt.img_size,opt.img_size)),
-            CenterCrop((opt.img_size,opt.img_size)),
-            ToTensor(),
-            Normalize(mean=[0.5,0.5,0.5], std=[0.5,0.5,0.5]),
-        ]
-    )
-    train_dataset = ImageFolder(root=opt.train_dir,
-                                transform=_train_transforms)
-    val_dataset = ImageFolder(root=opt.val_dir,
-                               transform=_val_transforms)
-    
-    train_dataloder = DataLoader(train_dataset, 
-               batch_size=opt.batch_size, 
-               shuffle=True, 
-               num_workers=opt.workers)    
-    val_dataloder = DataLoader(val_dataset, 
-               batch_size=opt.batch_size, 
-               shuffle=True, 
-               num_workers=opt.workers)   
-    
+    train_dataloder = DataLoader(train_dataset, batch_size=opt.batch_size, 
+                                shuffle=True, num_workers=opt.workers)    
+    val_dataloder = DataLoader(val_dataset, batch_size=opt.batch_size, 
+                                shuffle=True, num_workers=opt.workers)   
 
     optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr)
     loss_fn = torch.nn.CrossEntropyLoss()
 
-    model.to(device)
-    # optimizer.to(device)
-
-    def train(model, dataloader, loss_fn, optimizer, device):
-        model.train()
-        running_loss = 0. 
-        corr = 0.
-        # last_loss = 0. 
-        prograss_bar = tqdm(dataloader, desc="train")
-        for img, label in prograss_bar:
-            img, label = img.to(device), label.to(device)
-            optimizer.zero_grad()
-            output = model(img)
-            loss = loss_fn(output, label)
-            loss.backward()
-            optimizer.step()
-
-            _, pred = output.max(dim=1)
-            corr += pred.eq(label).sum().item()
-            running_loss += loss.item() * img.size(0)
-        acc = corr / len(dataloader.dataset)
-        return running_loss / len(dataloader.dataset), acc 
-    def val(model, dataloader, loss_fn, device):
-        model.eval()
-        prograss_bar = tqdm(dataloader, desc="val")
-        with torch.no_grad():
-            corr = 0. 
-            running_loss = 0. 
-            for img, label in prograss_bar:
-                img, label = img.to(device), label.to(device)
-                output = model(img)
-                _, pred = output.max(dim=1)
-                corr += torch.sum(pred.eq(label)).item()
-
-                running_loss += loss_fn(output, label).item() * img.size(0)
-            acc = corr / len(dataloader.dataset)
-        return running_loss / len(dataloader.dataset), acc 
-    
-
     min_loss = np.inf 
+
     for epoch in range(opt.epochs):
-        train_loss, train_acc = train(model, train_dataloder, loss_fn=loss_fn, device=device, optimizer=optimizer)
-        val_loss, val_acc = val(model, train_dataloder, loss_fn=loss_fn, device=device)
+        train_loss, train_acc = train(opt, model, train_dataloder, loss_fn=loss_fn, device=device, optimizer=optimizer)
+        val_loss, val_acc = val(opt, model, val_dataloder, loss_fn=loss_fn, device=device)
 
         if val_loss < min_loss : 
             print(f"[INFO] update loss {min_loss:.5f} to {val_loss:.5f}. saved")
             min_loss = val_loss
-            model_save_path = os.path.join(opt.save_dir, f"epoch_{epoch}_loss_{val_loss:.2f}.pt")
+            model_save_path = os.path.join(save_path, f"epoch_{epoch}_loss_{val_loss:.2f}.pt")
             torch.save(model.state_dict(), model_save_path)
-        print(f"epoch : {epoch}, loss : {train_loss:.3f}, acc : {train_acc:.2f}, val_loss : {val_loss:.3f}, val_acc : {val_acc:.2f}")
+        print(f"epoch : {epoch}, loss : {train_loss:.3f}, f1 : {train_acc:.2f}, val_loss : {val_loss:.3f}, val_f1 : {val_acc:.2f}")
 
 if __name__ == '__main__':
     opt = parse_opt()

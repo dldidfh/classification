@@ -1,8 +1,7 @@
+from datetime import datetime as dt 
 
+a = dt.now()
+b = a.strftime("%y%m%d")
 
-a= "1,2,3,4"
-
-print(len(a.split(",")))
-
-if a : 
-    print(1)
+print(a)
+print(b)
