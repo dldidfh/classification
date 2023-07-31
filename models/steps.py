@@ -40,3 +40,13 @@ def val(opt, model, dataloader, loss_fn, device):
         # acc = corr / len(dataloader.dataset)
     return running_loss / len(dataloader.dataset), acc 
     
+def test(opt, model, dataloader, device):
+    model.eval()
+    prograss_bar = tqdm(dataloader, desc="test :")
+    with torch.no_grad():
+        for img, label in prograss_bar:
+            img, label = img.to(device), label.to(device)
+            output = model(img)
+            _, pred = output.max(dim=1)
+    return 
+        

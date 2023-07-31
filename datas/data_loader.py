@@ -1,5 +1,8 @@
 # from typing import Any, Callable, Optional
+from typing import Iterable, List, Optional, Union
+from torch.utils.data.dataloader import _collate_fn_t, _worker_init_fn_t
 from torchvision.datasets import ImageFolder
+from torch.utils.data import DataLoader, Dataset, Sampler
 from torchvision.transforms import (
     CenterCrop,
     Compose,
@@ -33,5 +36,12 @@ class CustomLoader(ImageFolder):
         else:
             raise  "check args - img size"
             
+class CustomDataLoader(DataLoader):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.iterator = super.__iter__()
+    def __iter__(self):
+        
+        pass 
 
     

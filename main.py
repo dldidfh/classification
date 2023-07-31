@@ -45,7 +45,7 @@ def parse_opt():
 def main(opt):
     p = Path(opt.save_dir)
     save_path = (p / dt.now().strftime("%y%m%d"))
-    save_path.mkdir(parents=True, exist_ok=False)
+    save_path.mkdir(parents=True, exist_ok=True)
 
     device = device_check(opt.device)
     model = load_model(opt.model_type, opt.model_path, device, opt.num_cls, opt.pretrained)
@@ -75,6 +75,7 @@ def main(opt):
             print(f"[INFO] update loss {min_loss:.5f} to {val_loss:.5f}. saved")
             min_loss = val_loss
             model_save_path = os.path.join(save_path, f"epoch_{epoch}_loss_{val_loss:.2f}.pt")
+            # 모델 저장 - 
             torch.save(model.state_dict(), model_save_path)
         print(f"epoch : {epoch}, loss : {train_loss:.3f}, f1 : {train_acc:.2f}, val_loss : {val_loss:.3f}, val_f1 : {val_acc:.2f}")
 
