@@ -19,7 +19,8 @@ def transfroms( dtype, img_size):
         elif dtype == "val" or dtype == "test" :
             return Compose([
                 Resize((img_size,img_size)),
-                CenterCrop((img_size,img_size)),
+                # Resize((img_size,img_size), interpolation=Interpol),
+                # CenterCrop((img_size,img_size)),
                 ToTensor(),
                 Normalize(mean=[0.5,0.5,0.5], std=[0.5,0.5,0.5]),
             ])

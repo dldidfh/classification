@@ -1,13 +1,13 @@
 from torcheval.metrics.functional import multiclass_f1_score
 from tqdm import tqdm
 import torch 
-
+TQDM_BAR_FORMAT = '\t{l_bar}{bar:30}{r_bar}'
 def train(opt, model, dataloader, loss_fn, optimizer, device):
     model.train()
     running_loss = 0. 
     # corr = 0.
     # last_loss = 0. 
-    prograss_bar = tqdm(dataloader, desc="train")
+    prograss_bar = tqdm(dataloader, desc="train : ", bar_format=TQDM_BAR_FORMAT)
     for img, label in prograss_bar:
         img, label = img.to(device), label.to(device)
         optimizer.zero_grad()
@@ -25,7 +25,7 @@ def train(opt, model, dataloader, loss_fn, optimizer, device):
 
 def val(opt, model, dataloader, loss_fn, device):
     model.eval()
-    prograss_bar = tqdm(dataloader, desc="val")
+    prograss_bar = tqdm(dataloader, desc="val : ", bar_format=TQDM_BAR_FORMAT)
     with torch.no_grad():
         corr = 0. 
         running_loss = 0. 

@@ -65,20 +65,21 @@ def main(opt):
     optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr)
     loss_fn = torch.nn.CrossEntropyLoss()
 
-    min_loss = np.inf 
+    # min_loss = np.inf 
+    min_acc = np.inf 
 
     for epoch in range(opt.epochs):
         train_loss, train_acc = train(opt, model, train_dataloder, loss_fn=loss_fn, device=device, optimizer=optimizer)
         val_loss, val_acc = val(opt, model, val_dataloder, loss_fn=loss_fn, device=device)
 
-        if val_acc < min_loss : 
-            print(f"[INFO] update loss {min_loss:.5f} to {val_loss:.5f}. saved")
-            min_loss = val_acc
+        if val_acc < min_acc : 
+            print(f"[INFO] update loss {min_acc:.5f} to {val_loss:.5f}. saved")
+            min_acc = val_acc
             model_save_path = os.path.join(save_path, f"epoch_{epoch}_f1_{val_loss:.2f}.pt")
             # 모델 저장 - 
             torch.save(model.state_dict(), model_save_path)
         print(f"epoch : {epoch}, train_loss : {train_loss:.3f}, train_f1 : {train_acc:.3f}, val_loss : {val_loss:.3f}, val_f1 : {val_acc:.3f}")
-
+    
 if __name__ == '__main__':
     opt = parse_opt()
     main(opt)
