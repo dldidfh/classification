@@ -34,7 +34,7 @@ def main(opt):
     device = device_check(opt.device)
     files = []
     # 모델 로드
-    model = timm.create_model("timm/vit_tiny_patch16_224.augreg_in21k", num_classes=opt.cls_num, pretrained=False)
+    model = timm.create_model("timm/vit_tiny_patch16_224.augreg_in21k", num_classes=opt.cls_num)
     # for i, param in enumerate(model.parameters()):
     #     if i == 0 :
     #         print(param)
