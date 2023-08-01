@@ -18,6 +18,7 @@ IMG_EXT = ["jpg", "png", "bmp", "jpeg"]
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', type=str, default="engines/dddd.pt", help='model path')
+    parser.add_argument('--model_url', type=str, default="timm/xxxx", help='model url')
     parser.add_argument('--img_dir', type=str, default='dir/', help='test image dir path')
     parser.add_argument('--save_dir', type=str, default='dir/', help='result save dir path')
     parser.add_argument('--cls_num', type=int, default=2, help='num of classes')
@@ -26,7 +27,6 @@ def parse_opt():
     parser.add_argument('--workers', type=int, default=0, help='core num workers')
     parser.add_argument('--device', type=str, default='0', help='cpu or 0,1,2...')
 
-
     opt = parser.parse_args()
     return opt
 
@@ -34,7 +34,7 @@ def main(opt):
     device = device_check(opt.device)
     files = []
     # 모델 로드
-    model = timm.create_model("timm/vit_tiny_patch16_224.augreg_in21k", num_classes=opt.cls_num)
+    model = timm.create_model(opt.model_url, num_classes=opt.cls_num)
     # for i, param in enumerate(model.parameters()):
     #     if i == 0 :
     #         print(param)

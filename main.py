@@ -75,7 +75,7 @@ def main(opt):
         if val_acc < min_acc : 
             print(f"[INFO] update loss {min_acc:.5f} to {val_loss:.5f}. saved")
             min_acc = val_acc
-            model_save_path = os.path.join(save_path, f"epoch_{epoch}_f1_{val_loss:.2f}.pt")
+            model_save_path = os.path.join(save_path, f"epoch_{epoch}_f1_{min_acc*100:.0f}_loss_{val_loss:.3f}.pt")
             # 모델 저장 - 
             torch.save(model.state_dict(), model_save_path)
         print(f"epoch : {epoch}, train_loss : {train_loss:.3f}, train_f1 : {train_acc:.3f}, val_loss : {val_loss:.3f}, val_f1 : {val_acc:.3f}")
