@@ -20,8 +20,9 @@ def train(opt, model, dataloader, loss_fn, optimizer, device):
         optimizer.step()
         _, pred = output.max(dim=1)
         # corr += pred.eq(label).sum().item()
-        pred_list.append(pred)
-        label_list.append(label)
+        for i, l in enumerate(label):
+            pred_list.append(pred[i])
+            label_list.append(l)
         running_loss += loss.item() * img.size(0)
     acc = multiclass_f1_score(torch.Tensor(pred_list), torch.Tensor(label_list), num_classes=opt.num_cls)
     # acc = corr / len(dataloader.dataset)
@@ -40,8 +41,9 @@ def val(opt, model, dataloader, loss_fn, device):
             output = model(img)
             _, pred = output.max(dim=1)
             # corr += torch.sum(pred.eq(label)).item()
-            pred_list.append(pred)
-            label_list.append(label)
+            for i, l in enumerate(label):
+                pred_list.append(pred[i])
+                label_list.append(l)
 
             running_loss += loss_fn(output, label).item() * img.size(0)
         acc = multiclass_f1_score(torch.Tensor(pred_list), torch.Tensor(label_list), num_classes=opt.num_cls)
