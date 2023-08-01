@@ -38,6 +38,7 @@ def parse_opt():
     parser.add_argument('--epochs', type=int, default=3, help='epochs ')
     parser.add_argument('--batch_size', type=int, default=32, help='batch size')
     parser.add_argument('--lr', type=float, default=0.001, help='learning rate ')
+    parser.add_argument('--average', type=str, default="macro", help='f1 score metrics average - micro[default], weighted, macro, None')
 
     opt = parser.parse_args()
     return opt
