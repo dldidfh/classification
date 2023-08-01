@@ -6,13 +6,14 @@ from torchvision.transforms import (
     RandomHorizontalFlip,
     RandomResizedCrop,
     Resize,
-    ToTensor,
+    ToTensor,RandomVerticalFlip
 )
 def transfroms( dtype, img_size):
         if dtype == "train":
             return Compose([
                 RandomResizedCrop((img_size,img_size)),
                 RandomHorizontalFlip(),
+                RandomVerticalFlip(),
                 ToTensor(),
                 Normalize(mean=[0.5,0.5,0.5], std=[0.5,0.5,0.5]),
             ])

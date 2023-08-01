@@ -2,16 +2,11 @@ from glob import glob
 import torch 
 from pathlib import Path
 import argparse
-import cv2 
 import os 
 import shutil
 from tqdm import tqdm 
 import timm 
-from torch.utils.data import DataLoader
-from torchvision.transforms import ToTensor, Normalize, Resize, Compose, ToPILImage
-from torchvision.datasets import ImageFolder
 from datas.augmentations import transfroms
-from models.steps import test 
 from utils.check_utils import device_check
 from PIL import Image
 IMG_EXT = ["jpg", "png", "bmp", "jpeg"]

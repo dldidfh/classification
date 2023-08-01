@@ -73,7 +73,7 @@ def main(opt):
         train_loss, train_acc = train(opt, model, train_dataloder, loss_fn=loss_fn, device=device, optimizer=optimizer)
         val_loss, val_acc = val(opt, model, val_dataloder, loss_fn=loss_fn, device=device)
 
-        if val_acc < min_acc : 
+        if val_acc > min_acc : 
             print(f"[INFO] update loss {min_acc:.5f} to {val_loss:.5f}. saved")
             min_acc = val_acc
             model_save_path = os.path.join(save_path, f"epoch_{epoch}_f1_{min_acc*100:.0f}_loss_{val_loss:.3f}.pt")
