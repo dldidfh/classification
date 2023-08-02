@@ -1,14 +1,14 @@
 import argparse
-import sys, os 
+import os 
 import numpy as np 
 from utils.check_utils import device_check
 from models.call_model import load_model
-from datas.data_loader import CustomLoader 
-import evaluate
+from datas.data_loader import CustomDataSet 
 import torch 
+from torchvision.datasets import ImageFolder
 from torch.utils.data import DataLoader
 from models.steps import train, val
-from datas.augmentations import transfroms
+from datas.augmentations import transfroms, albumentations_transforms
 from pathlib import Path 
 from datetime import datetime as dt 
 def parse_opt():
@@ -21,8 +21,10 @@ def parse_opt():
     
     # basics
     parser.add_argument('--device', type=str, default='0', help='cpu or 0,1,2...')
+    parser.add_argument('--cache', type=str, default='ram', help='ram or cpu')
 
     # about datas 
+    parser.add_argument('--augment', action="store_true", help='use augmentation with albumentations')
 
 
     # about Model
@@ -53,10 +55,14 @@ def main(opt):
 
     # train_dataset = CustomLoader(root=opt.train_dir, img_size=(opt.img_size,opt.img_size), data_type="train")
     # val_dataset = CustomLoader(root=opt.val_dir, img_size=(opt.img_size,opt.img_size), data_type="val")
-    from torchvision.datasets import ImageFolder
     # 왜 customloader로 바꾸면 데이터 전송이 안되나? 
-    train_dataset = ImageFolder(root=opt.train_dir, transform=transfroms("train", opt.img_size))
-    val_dataset = ImageFolder(root=opt.val_dir, transform=transfroms("val", opt.img_size))
+    if opt.augment:
+        train_dataset = CustomDataSet(root_dir=opt.train_dir, cls_num=opt.num_cls,cache=opt.cache, transform=albumentations_transforms("train", opt.img_size))
+        val_dataset = CustomDataSet(root_dir=opt.val_dir, cls_num=opt.num_cls, cache=opt.cache, transform=albumentations_transforms("val", opt.img_size))
+    else:
+        train_dataset = ImageFolder(root=opt.train_dir, transform=transfroms("train", opt.img_size))
+        val_dataset = ImageFolder(root=opt.val_dir, transform=transfroms("val", opt.img_size))
+    
 
     train_dataloder = DataLoader(train_dataset, batch_size=opt.batch_size, 
                                 shuffle=True, num_workers=opt.workers)    
@@ -64,22 +70,23 @@ def main(opt):
                                 shuffle=True, num_workers=opt.workers)   
 
     optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr)
+    # loss_fn = torch.nn.BCEWithLogitsLoss()
     loss_fn = torch.nn.CrossEntropyLoss()
 
     # min_loss = np.inf 
-    min_acc = np.inf 
+    min_acc = 0. 
 
     for epoch in range(opt.epochs):
         train_loss, train_acc = train(opt, model, train_dataloder, loss_fn=loss_fn, device=device, optimizer=optimizer)
         val_loss, val_acc = val(opt, model, val_dataloder, loss_fn=loss_fn, device=device)
 
-        if val_acc > min_acc : 
+        if val_acc >= min_acc : 
             print(f"[INFO] update loss {min_acc:.5f} to {val_loss:.5f}. saved")
             min_acc = val_acc
-            model_save_path = os.path.join(save_path, f"epoch_{epoch}_f1_{min_acc*100:.0f}_loss_{val_loss:.3f}.pt")
+            model_save_path = os.path.join(save_path, f"epoch_{epoch}_f1_{min_acc:.3f}_loss_{val_loss:.3f}.pt")
             # 모델 저장 - 
             torch.save(model.state_dict(), model_save_path)
-        print(f"epoch : {epoch}, train_loss : {train_loss:.3f}, train_f1 : {train_acc:.3f}, val_loss : {val_loss:.3f}, val_f1 : {val_acc:.3f}")
+        print(f"\tepoch : {epoch+1}, train_loss : {train_loss:.3f}, train_f1 : {train_acc:.3f}, val_loss : {val_loss:.3f}, val_f1 : {val_acc:.3f}")
     
 if __name__ == '__main__':
     opt = parse_opt()

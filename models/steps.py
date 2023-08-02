@@ -10,7 +10,7 @@ def train(opt, model, dataloader, loss_fn, optimizer, device):
     # last_loss = 0. 
     label_list = []
     pred_list = []
-    prograss_bar = tqdm(dataloader, desc="train : ", bar_format=TQDM_BAR_FORMAT)
+    prograss_bar = tqdm(dataloader, desc="train :\t", bar_format=TQDM_BAR_FORMAT)
     for img, label in prograss_bar:
         img, label = img.to(device), label.to(device)
         optimizer.zero_grad()
@@ -30,7 +30,7 @@ def train(opt, model, dataloader, loss_fn, optimizer, device):
 
 def val(opt, model, dataloader, loss_fn, device):
     model.eval()
-    prograss_bar = tqdm(dataloader, desc="val : ", bar_format=TQDM_BAR_FORMAT)
+    prograss_bar = tqdm(dataloader, desc="val :\t", bar_format=TQDM_BAR_FORMAT)
     with torch.no_grad():
         corr = 0. 
         running_loss = 0. 
